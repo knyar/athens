@@ -17,7 +17,11 @@ RUN yarn cli:uberjar
 
 FROM openjdk:16
 
-RUN mkdir -p /srv/athens/db
+RUN mkdir -p /srv/athens/logs /srv/athens/datascript
+
+RUN groupadd -r -g 13001 athens && useradd -u 13001 -r -s /bin/false -g athens athens
+
+RUN chown athens:athens /srv/athens/logs /srv/athens/datascript
 
 # Copy from build container
 COPY --from=build /src/target/athens-lan-party-standalone.jar /srv/athens/
@@ -27,11 +31,10 @@ COPY --from=build /src/target/athens-cli.jar /srv/athens/
 # Set athens as the working directory
 WORKDIR /srv/athens/
 
+USER athens
+
 # Expose ports
 EXPOSE 3010
 
 # serve jar file
 CMD ["/srv/athens/docker-run-lan-party.sh"]
-
-# Logging: By default docker uses the json-file driver to store container
-# logs and can be found in : /var/lib/docker/containers/[container-id]/[container-id]-json.log:w

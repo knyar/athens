@@ -1,0 +1,37 @@
+FROM node:14-alpine AS build
+
+RUN apk --update add openjdk11 curl bash git
+
+RUN curl https://download.clojure.org/install/linux-install-1.11.1.1155.sh | bash
+
+RUN mkdir -p /src
+COPY . /src
+WORKDIR /src
+
+RUN yarn
+RUN yarn server:compile
+RUN yarn server:uberjar
+RUN yarn cli:compile
+RUN yarn cli:uberjar
+
+
+FROM openjdk:16
+
+RUN mkdir -p /srv/athens/db
+
+# Copy from build container
+COPY --from=build /src/target/athens-lan-party-standalone.jar /srv/athens/
+COPY --from=build /src/script/docker-run-lan-party.sh /srv/athens/
+COPY --from=build /src/target/athens-cli.jar /srv/athens/
+
+# Set athens as the working directory
+WORKDIR /srv/athens/
+
+# Expose ports
+EXPOSE 3010
+
+# serve jar file
+CMD ["/srv/athens/docker-run-lan-party.sh"]
+
+# Logging: By default docker uses the json-file driver to store container
+# logs and can be found in : /var/lib/docker/containers/[container-id]/[container-id]-json.log:w

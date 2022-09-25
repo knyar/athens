@@ -4,15 +4,15 @@
 version: "3.4"
 services:
   athens:
-    image: ghcr.io/athensresearch/athens:latest
+    # image: ghcr.io/athensresearch/athens:v2.0.0
     # Uncomment the build sections if you want docker compose to build them locally.
     # Note: when building locally on a M1 mac, the athens image seems to hang on connecting
     # to fluree for no clear reason, but if you remove all memory flags on the
     # script/docker-run-lan-party.sh script it doesn't hang anymore. Maybe an issue with
     # docker on M1, unclear.
-    # build:
-    #   context: .
-    #   dockerfile: athens.dockerfile
+    build:
+      context: .
+      dockerfile: athens.dockerfile.build
     restart: always
     depends_on:
       fluree:
@@ -20,8 +20,8 @@ services:
     ports:
       - 3010:3010 # Change this according to CONFIG_EDN.
     volumes:
-      - ./athens-data/logs:/srv/athens/logs
-      - ./athens-data/datascript:/srv/athens/datascript
+      - athens_logs:/srv/athens/logs
+      - athens_datascript:/srv/athens/datascript
     environment:
       # Uses system env vars for settings if available.
       # CONFIG_EDN is deep merged with the default config file.
@@ -33,19 +33,6 @@ services:
       retries: 10
       start_period: 15s
 
-
-  nginx:
-    image: ghcr.io/athensresearch/nginx:latest
-    # build:
-    #  context: .
-    #  dockerfile: nginx.dockerfile
-    restart: always
-    depends_on:
-      athens:
-        condition: service_healthy
-    ports:
-      - 80:80
-
   fluree:
     # Under default settings maximum recommended event size is 2mb.
     # Can be increased via fdb-memory-reindex-max to up to 10mb.
@@ -54,7 +41,7 @@ services:
     ports:
       - 8090:8090
     volumes:
-      - ./athens-data/fluree:/var/lib/fluree
+      - fluree_data:/var/lib/fluree
     healthcheck:
       # TODO: this health check won't work after fluree/ledger:1.0.0-beta17 because
       # the fluree images no longer contain curl because they use smaller docker base images.
@@ -65,3 +52,8 @@ services:
       timeout: 30s
       retries: 3
       start_period: 15s
+
+volumes:
+  athens_datascript:
+  athens_logs:
+  fluree_data:

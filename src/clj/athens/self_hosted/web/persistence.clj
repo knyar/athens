@@ -72,7 +72,7 @@
      (path->id path)]))
 
 
-(def frequency 100)
+(def frequency 1)
 (def counter (atom 0))
 
 
